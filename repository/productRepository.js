@@ -26,8 +26,12 @@ class ProductRepository {
         return this.dao.all(`SELECT product_id AS id, name, price FROM product`)
     }
 
-    getById(productId) {
+    getByProductId(productId) {
+
         return this.dao.all(`SELECT * FROM product WHERE product_id = ?`, [productId])
+    }
+    getById(id) {
+        return this.dao.get(`SELECT * FROM product WHERE id = ?`, [id])
     }
 
 

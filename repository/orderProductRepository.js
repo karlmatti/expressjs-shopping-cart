@@ -55,12 +55,23 @@ class OrderProductRepository {
         return this.dao.run(sql, insertedItems)
     }*/
 
-    updateQuantity(productId, ordersId) {
+    updateQuantityByOne(productId, ordersId) {
         return this.dao.run(
             `UPDATE order_product 
             SET quantity = quantity + 1
             WHERE orders_id = ? AND product_id = ?`,
             [ordersId, productId]
+        )
+    }
+    updateQuantity(ordersId, productId, quantity) {
+        console.log("quantity => " + quantity)
+        console.log("productId => " + productId)
+        console.log("ordersId => " + ordersId)
+        return this.dao.run(
+                `UPDATE order_product
+                 SET quantity = ?
+                 WHERE orders_id = ? AND product_id = ?`,
+            [quantity, ordersId, productId]
         )
     }
     getOrderProductByOrderId(ordersId) {

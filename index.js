@@ -25,7 +25,7 @@ productRepository.createTable()
             let products = JSON.parse(data);
 
             products.forEach( async product => {
-                if ((await productRepository.getById(product.id)).length === 0) {
+                if ((await productRepository.getByProductId(product.id)).length === 0) {
                     productRepository.create(product.id, product.name, product.price)
                 }
             })
@@ -68,10 +68,10 @@ api.post(orderPrefix + "/:order_id/products", async (req, res) => {
 
 // ---- PATCH
 api.patch(orderPrefix + "/:order_id", async(req, res) => {
-    res.send(await (orderService.updateStatus(req.params.order_id, req.body)));
+    res.send(await (orderService.updateOrder(req.params.order_id, req.body)));
 })
-api.patch(orderPrefix + "/:order_id/products/:product_id", (req, res) => {
-    res.send('PATCH /api/orders/:order_id/products/:product_id - update product quantity');
+api.patch(orderPrefix + "/:order_id/products/:product_id", async(req, res) => {
+    res.send(await (orderService.updateOrderProduct(req.params.order_id, req.params.product_id, req.body)));
 })
 
 
