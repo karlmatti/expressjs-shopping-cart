@@ -17,7 +17,8 @@ class OrderProductRepository {
         CONSTRAINT product_id_fk FOREIGN KEY (product_id)
             REFERENCES product(id) ON UPDATE CASCADE ON DELETE CASCADE,
         CONSTRAINT order_product_id_fk FOREIGN KEY (replaced_with)
-            REFERENCES order_product(id) ON UPDATE CASCADE ON DELETE CASCADE)`
+            REFERENCES order_product(id) ON UPDATE CASCADE ON DELETE CASCADE,
+        UNIQUE(orders_id, product_id))`
         return this.dao.run(sql)
     }
 
@@ -61,6 +62,13 @@ class OrderProductRepository {
             WHERE orders_id = ? AND product_id = ?`,
             [ordersId, productId]
         )
+    }
+    getOrderProductByOrderId(ordersId) {
+        let sql = `SELECT product.product_id, product.price, order_product.quantity  FROM product 
+            LEFT JOIN order_product 
+            ON product.product_id=order_product.product_id
+            WHERE order_product.orders_id=?`
+        return this.dao.all(sql, [ordersId])
     }
     //createReplacementProduct(productId)
 }

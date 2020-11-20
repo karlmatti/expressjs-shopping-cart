@@ -14,6 +14,7 @@ const fs = require('fs');
 const OrderRepository = require("./repository/ordersRepository");
 const OrderProductRepository = require("./repository/orderProductRepository");
 
+const orderService = new OrderService(dao);
 
 // -- Load initial DB
 let productRepository = new ProductRepository(dao);
@@ -44,10 +45,10 @@ api.get(productPrefix, async (req, res) => {
 // -- /api/orders/*
 // ---- GET
 api.get(orderPrefix + "/:order_id", async(req, res) => {
-    res.send(await new OrderService(dao).getById(req.params.order_id));
+    res.send(await orderService.getById(req.params.order_id));
 })
 api.get(orderPrefix + "/:order_id/products", async (req, res) => {
-    res.send(await new OrderService(dao).getOrderProductById(req.params.order_id))
+    res.send(await orderService.getOrderProductById(req.params.order_id))
 })
 
 api.get("/test/orderproducts", async (req, res) => {
@@ -56,18 +57,18 @@ api.get("/test/orderproducts", async (req, res) => {
 
 // ---- POST
 api.post(orderPrefix, async (req, res) => {
-    // TODO: update order total value
-    res.send(await (new OrderService(dao).create()));
+
+    res.send(await (orderService.create()));
 })
 api.post(orderPrefix + "/:order_id/products", async (req, res) => {
-    res.send(await (new OrderService(dao).insertProduct(req.body, req.params.order_id)))
+    res.send(await (orderService.insertProductAndUpdateTotal(req.body, req.params.order_id)))
 
     //res.send('POST /api/orders/:order_id/products - add products to order');
 })
 
 // ---- PATCH
-api.patch(orderPrefix + "/:order_id", (req, res) => {
-    res.send('PATCH /api/orders/:order_id - update order');
+api.patch(orderPrefix + "/:order_id", async(req, res) => {
+    res.send(await (orderService.updateStatus(req.params.order_id, req.body)));
 })
 api.patch(orderPrefix + "/:order_id/products/:product_id", (req, res) => {
     res.send('PATCH /api/orders/:order_id/products/:product_id - update product quantity');

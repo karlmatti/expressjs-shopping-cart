@@ -42,6 +42,22 @@ class OrdersRepository {
             `SELECT * FROM orders WHERE id = ?`,
             [id])
     }
+
+    updateTotal(total, ordersId) {
+        return this.dao.run(
+            `UPDATE orders 
+            SET total = ?
+            WHERE id = ?`,
+            [total, ordersId]
+        )
+    }
+
+    updateStatusToPaid(orderId) {
+        let sql = `UPDATE orders 
+            SET status = 'PAID', paid = total 
+            WHERE id = ?`
+        return this.dao.run(sql, [orderId])
+    }
 }
 
 module.exports = OrdersRepository;
