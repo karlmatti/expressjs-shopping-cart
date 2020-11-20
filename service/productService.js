@@ -6,9 +6,10 @@ class ProductService {
     }
 
 
-    getAll() {
-        return this.repository.getAll();
+    async getAll() {
+        return this.repository.getAll();;
     }
+
 
 
 }

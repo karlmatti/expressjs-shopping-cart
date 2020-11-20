@@ -7,10 +7,11 @@ const productPrefix = apiPrefix + "/products"
 
 const AppDAO = require('./repository/ApiDAO')
 const ProductService = require("./service/productService");
+const OrderService = require("./service/ordersService");
 const ProductRepository = require("./repository/productRepository");
 const dao = new AppDAO('./database.sqlite3')
 const fs = require('fs');
-const OrderRepository = require("./repository/orderRepository");
+const OrderRepository = require("./repository/ordersRepository");
 const OrderProductRepository = require("./repository/orderProductRepository");
 
 
@@ -32,6 +33,7 @@ productRepository.createTable()
 new OrderRepository(dao).createTable();
 new OrderProductRepository(dao).createTable();
 
+api.use(express.json({type: '*/*'}));
 // -- /api/products/*
 // ---- GET
 api.get(productPrefix, async (req, res) => {
@@ -41,20 +43,26 @@ api.get(productPrefix, async (req, res) => {
 
 // -- /api/orders/*
 // ---- GET
-api.get(orderPrefix + "/:order_id", (req, res) => {
-    res.send('GET /api/orders/:order_id - get order details');
+api.get(orderPrefix + "/:order_id", async(req, res) => {
+    res.send(await new OrderService(dao).getById(req.params.order_id));
 })
-api.get(orderPrefix + "/:order_id/products", (req, res) => {
-    res.send('GET /api/orders/:order_id/products - get order products');
+api.get(orderPrefix + "/:order_id/products", async (req, res) => {
+    res.send(await new OrderService(dao).getOrderProductById(req.params.order_id))
+})
+
+api.get("/test/orderproducts", async (req, res) => {
+    res.send(await new OrderProductRepository(dao).getAll());
 })
 
 // ---- POST
-api.post(orderPrefix, (req, res) => {
-
-    res.send(req.body);
+api.post(orderPrefix, async (req, res) => {
+    // TODO: update order total value
+    res.send(await (new OrderService(dao).create()));
 })
-api.post(orderPrefix + "/products", (req, res) => {
-    res.send('POST /api/orders/:order_id/products - add products to order');
+api.post(orderPrefix + "/:order_id/products", async (req, res) => {
+    res.send(await (new OrderService(dao).insertProduct(req.body, req.params.order_id)))
+
+    //res.send('POST /api/orders/:order_id/products - add products to order');
 })
 
 // ---- PATCH

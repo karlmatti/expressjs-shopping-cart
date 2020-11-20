@@ -21,7 +21,7 @@ class ApiDAO {
                     console.log(err)
                     reject(err)
                 } else {
-                    resolve({ id: this.lastID })
+                    resolve({ id: this.lastID }) //TODO: replace with "OK"
                 }
             })
         })
