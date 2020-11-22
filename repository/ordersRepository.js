@@ -51,6 +51,23 @@ class OrdersRepository {
             [total, ordersId]
         )
     }
+    updateDiscountWithAddition(discount, ordersId) {
+        let invertedDiscount = discount * (-1)
+        return this.dao.run(
+            `UPDATE orders 
+            SET discount = discount + ?
+            WHERE id = ?`,
+            [invertedDiscount, ordersId]
+        )
+    }
+    updateReturnsAndTotalWithAddition(returns, total, ordersId) {
+        return this.dao.run(
+            `UPDATE orders 
+            SET returns = returns + ?, total = total + ?
+            WHERE id = ?`,
+            [returns, total, ordersId]
+        )
+    }
 
     updateStatusToPaid(orderId) {
         let sql = `UPDATE orders 

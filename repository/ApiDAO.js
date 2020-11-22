@@ -15,13 +15,13 @@ class ApiDAO {
     }
     run(sql, params = []) {
         return new Promise((resolve, reject) => {
-            this.db.run(sql, params, function (err) {
+            this.db.run(sql, params, function (err, rows) {
                 if (err) {
                     console.log('Error running sql ' + sql)
                     console.log(err)
                     reject(err)
                 } else {
-                    resolve({ id: this.lastID }) //TODO: replace with "OK"
+                    resolve({ isSuccessful: true }) //TODO: replace with "OK"
                 }
             })
         })

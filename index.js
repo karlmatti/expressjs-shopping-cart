@@ -25,7 +25,8 @@ productRepository.createTable()
             let products = JSON.parse(data);
 
             products.forEach( async product => {
-                if ((await productRepository.getByProductId(product.id)).length === 0) {
+
+                if ((await productRepository.getByProductId(product.id)) === undefined) {
                     productRepository.create(product.id, product.name, product.price)
                 }
             })
@@ -51,7 +52,7 @@ api.get(orderPrefix + "/:order_id/products", async (req, res) => {
     res.send(await orderService.getOrderProductById(req.params.order_id))
 })
 
-api.get("/test/orderproducts", async (req, res) => {
+api.get("/test/orders/products", async (req, res) => {
     res.send(await new OrderProductRepository(dao).getAll());
 })
 

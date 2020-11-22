@@ -10,16 +10,21 @@ class ProductRepository {
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255),
         price VARCHAR(255),
-        product_id INTEGER)`
+        product_id INTEGER UNIQUE)`
 
         return this.dao.run(sql)
     }
 
     create(productId, name, price) {
-        return this.dao.run(
+        let newId = uuidv4()
+
+        let result = this.dao.run(
             `INSERT INTO product (id, name, price, product_id)
                 VALUES (?, ?, ?, ?)`,
-            [uuidv4(), name, price, productId])
+            [newId, name, price, productId])
+        result.id = newId
+        return result
+
     }
 
     getAll() {
@@ -28,7 +33,7 @@ class ProductRepository {
 
     getByProductId(productId) {
 
-        return this.dao.all(`SELECT * FROM product WHERE product_id = ?`, [productId])
+        return this.dao.get(`SELECT * FROM product WHERE product_id = ?`, [productId])
     }
     getById(id) {
         return this.dao.get(`SELECT * FROM product WHERE id = ?`, [id])
