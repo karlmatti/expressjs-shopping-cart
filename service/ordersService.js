@@ -93,65 +93,24 @@ class OrdersService {
 
     async updateOrderProduct(ordersId, productId, newValues) {
         if (newValues.replaced_with) {
-            console.log("replaced_with")
-            let replaced_with = newValues.replaced_with;
-            //console.log("updateOrderProduct("+ordersId+", "+productId+", "+JSON.stringify(newValues)+")")
-            // TODO: get orderProduct being replaced
-            let productBeingReplaced = await this.orderProductRepository
-                .getOrderProductByOrderIdAndByProductId(ordersId, productId)
-            console.log("orderBeingReplaced => " + JSON.stringify(productBeingReplaced))
-            // TODO: calculate orderBeingReplaced price sum
-            let priceSumOfOldProduct = this.multiply(
-                productBeingReplaced.quantity,
-                productBeingReplaced.price
-            )
-            console.log("price of orderBeingReplaced " + priceSumOfOldProduct)
-            // TODO: get replaced_with product price and calculate new sum
-            let priceSumOfNewProduct = 0;
-            if (productBeingReplaced.product_id === replaced_with.product_id) {
-                priceSumOfNewProduct = this.multiply(
-                    parseFloat(productBeingReplaced.price),
-                    replaced_with.quantity)
-            } else {
-                let newProduct = await this.productService.getByProductId(replaced_with.product_id)
-                console.log("newProduct => " + JSON.stringify(newProduct))
-                let priceOfNewProduct = newProduct.price
-                priceSumOfNewProduct = this.multiply(
-                    priceOfNewProduct,
-                    replaced_with.quantity
-                )
-            }
-            console.log("price of NewProduct " + priceSumOfNewProduct)
-            // TODO: save replaced_with orderProduct
-            let newProduct = await this.orderProductRepository.create(
-                ordersId, replaced_with.product_id, replaced_with.quantity, 1
-            )
+            return await this.ordersRepository.getById(ordersId)
+                .then(async order => {
+                    if (order.status === "PAID") {
+                        console.log("replaced_with")
+                        let replaced_with = newValues.replaced_with;
 
-            console.log("idOfNewProduct => " + newProduct.id)
-            // TODO: update orderProduct with replaced_with(replaced product id), product_id and quantity
-            await this.orderProductRepository.updateReplacedWith(ordersId, productId, newProduct.id).then(
-                res => {
-                    console.log(res)
-                }
-            )
-            // TODO: compare if replaced product price sum is bigger then update orders amounts accordingly
-            // TODO: add function to calculate all values
-            await this.calculateAndUpdateAmounts(ordersId)
-            /*
-            if (priceSumOfNewProduct > priceSumOfOldProduct) {
-                let discountModifier = priceSumOfNewProduct - priceSumOfOldProduct
-                await this.ordersRepository
-                    .updateDiscountWithAddition(discountModifier, ordersId)
-            } else if (priceSumOfNewProduct < priceSumOfOldProduct) {
-                let returnsModifier = priceSumOfNewProduct - priceSumOfOldProduct
-                let totalModifier = priceSumOfNewProduct
-                await this.ordersRepository
-                    .updateReturnsAndTotalWithAddition(returnsModifier, totalModifier, ordersId)
-            }*/
+                        let newProduct = await this.orderProductRepository.create(
+                            ordersId, replaced_with.product_id, replaced_with.quantity, 1
+                        )
 
+                        await this.orderProductRepository.updateReplacedWith(ordersId, productId, newProduct.id)
 
-
-            return "OK"
+                        await this.calculateAndUpdateAmounts(ordersId)
+                        return "OK"
+                    } else {
+                        return '"Invalid order status"' // TODO: add error code 400
+                    }
+                })
         } else if (newValues.quantity) {
             console.log("quantity")
             return await this.ordersRepository.getById(ordersId)
@@ -182,11 +141,33 @@ class OrdersService {
     }
     async calculateAndUpdateAmounts(ordersId){
         let orderProducts = await this.orderProductRepository.getByOrdersId(ordersId)
-        let discount, paid, returns, total = 0;
+        let amounts = this.calculateAmounts(orderProducts)
+        return await this.ordersRepository.updateAmounts(ordersId, amounts)
+
+    }
+    calculateAmounts(orderProducts) {
+        let discount, paid, returns, total
+        discount = paid = returns = total = 0
 
         orderProducts.forEach(orderProduct => {
+            let orderProductTotal = orderProduct.quantity * parseFloat(orderProduct.price)
+            paid += orderProductTotal
+            if (orderProduct.replaced_with == null){
+                total += orderProductTotal
 
+            } else {
+                let replacedOrderProduct = orderProduct.replaced_with
+                let replacedOrderProductTotal = replacedOrderProduct.quantity *
+                    parseFloat(replacedOrderProduct.price)
+                total += replacedOrderProductTotal
+                if (replacedOrderProductTotal > orderProductTotal) {
+                    discount += replacedOrderProductTotal - orderProductTotal
+                } else if (replacedOrderProductTotal < orderProductTotal) {
+                    discount += orderProductTotal - replacedOrderProductTotal
+                }
+            }
         })
+        return {discount, paid, returns, total}
     }
 
 }
