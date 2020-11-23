@@ -1,26 +1,27 @@
 const OrdersRepository = require('../repository/ordersRepository')
 const OrderProductRepository = require('../repository/orderProductRepository')
-const ProductService = require("./productService");
-
 
 class OrdersService {
     constructor(dao) {
         this.ordersRepository = new OrdersRepository(dao);
         this.orderProductRepository = new OrderProductRepository(dao);
-        this.productService = new ProductService(dao);
     }
 
 
     async create() {
-        // TODO: if status paid then cannot add new items
+        await this.ordersRepository
         let newOrder = await this.ordersRepository.create()
+
         newOrder.products = []
-        return newOrder
+
+        return {statusMsg: newOrder, statusCode: 201}
     }
 
     async insertProductAndUpdateTotal(products, ordersId) {
+        const order = await this.ordersRepository.getById(ordersId)
+        if (order.status === "PAID") return {statusMsg: '"Invalid order status"', statusCode: 400}
         const productObjects = await this.orderProductRepository.getByOrdersId(ordersId);
-        console.log("productObjects => " + JSON.stringify(productObjects))
+
         const productIds = productObjects.map(({ product_id }) => product_id)
         for (const productId of products) {
            if (productIds.includes(productId)) {
@@ -31,7 +32,7 @@ class OrdersService {
         }
         await this.updateTotal(ordersId)
 
-        return '"OK"'
+        return {statusMsg: '"OK"', statusCode: 201}
     }
     async updateTotal(ordersId) {
         let updatedProductObjects = await this.orderProductRepository.getByOrdersId(ordersId);
@@ -157,23 +158,33 @@ class OrdersService {
         discount = paid = returns = total = 0
 
         orderProducts.forEach(orderProduct => {
+
             let orderProductTotal = orderProduct.quantity * parseFloat(orderProduct.price)
             paid += orderProductTotal
-            if (orderProduct.replaced_with == null){
+            if (orderProduct.replaced_with === null){
+
                 total += orderProductTotal
 
             } else {
+
                 let replacedOrderProduct = orderProduct.replaced_with
                 let replacedOrderProductTotal = replacedOrderProduct.quantity *
                     parseFloat(replacedOrderProduct.price)
+
                 total += replacedOrderProductTotal
                 if (replacedOrderProductTotal > orderProductTotal) {
                     discount += replacedOrderProductTotal - orderProductTotal
+
                 } else if (replacedOrderProductTotal < orderProductTotal) {
-                    discount += orderProductTotal - replacedOrderProductTotal
+                    returns += orderProductTotal - replacedOrderProductTotal
+
                 }
             }
         })
+        discount = discount.toFixed(2)
+        paid = paid.toFixed(2)
+        returns = returns.toFixed(2)
+        total = total.toFixed(2)
         return {discount, paid, returns, total}
     }
 

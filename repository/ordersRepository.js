@@ -53,11 +53,6 @@ class OrdersRepository {
     }
 
     updateAmounts(ordersId, {discount, paid, returns, total}){
-
-        discount = discount.toFixed(2)
-        paid = paid.toFixed(2)
-        returns = returns.toFixed(2)
-        total = total.toFixed(2)
         return this.dao.run(
             `UPDATE orders 
             SET discount = ?, paid = ?, returns = ?, total = ?

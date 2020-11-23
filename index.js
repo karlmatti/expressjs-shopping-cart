@@ -36,12 +36,14 @@ api.get(orderPrefix + "/:order_id/products", async (req, res) => {
 
 // ---- POST
 api.post(orderPrefix, async (req, res) => {
-
-    res.send(await (orderService.create()));
+    let {statusCode, statusMsg} = await (orderService.create())
+    res.status(statusCode)
+    res.send(statusMsg)
 })
 api.post(orderPrefix + "/:order_id/products", async (req, res) => {
-    res.send(await (orderService.insertProductAndUpdateTotal(req.body, req.params.order_id)))
-
+    let {statusCode, statusMsg} = await (orderService.insertProductAndUpdateTotal(req.body, req.params.order_id))
+    res.status(statusCode)
+    res.send(statusMsg)
     //res.send('POST /api/orders/:order_id/products - add products to order');
 })
 

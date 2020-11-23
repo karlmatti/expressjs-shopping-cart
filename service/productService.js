@@ -10,15 +10,6 @@ class ProductService {
         return this.repository.getAll()
     }
 
-    getByProductId(productId) {
-        return this.repository.getByProductId(productId)
-    }
-
-    getById(id) {
-        return this.repository.getById(id)
-    }
-
-
 
 }
 
