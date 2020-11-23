@@ -1,24 +1,22 @@
 {
-  "name": "ecommerce-cart",
+  "name": "e-commerce-cart-api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
   },
-  "author": "",
+  "author": "Karl Matti",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.7.2",
     "chai": "^4.2.0",
     "express": "^4.17.1",
-    "mongoose": "^5.10.15",
     "sqlite3": "^5.0.0",
     "uuid": "^8.3.1"
   },
   "devDependencies": {
     "jest": "^26.6.3",
-    "mocha": "^8.2.1",
-    "mongodb-memory-server": "^6.9.2"
+    "mocha": "^8.2.1"
   }
 }
