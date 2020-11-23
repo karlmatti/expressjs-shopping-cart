@@ -44,18 +44,16 @@ class OrderProductRepository {
             delete orderProduct.orders_id
             return orderProduct
         })
-        //return this.dao.all(sql, [ordersId])
+
+    }
+    getOneByProductId(productId, isReplacement = 0) {
+        let sql = `SELECT *     
+            FROM order_product
+            WHERE id=? AND is_replacement=?`
+        return this.dao.get(sql, [productId, isReplacement])
     }
 
 
-   /* getOrderProductByOrderId(ordersId) {
-        let sql = `SELECT product.product_id, product.price, order_product.quantity FROM product
-            LEFT JOIN order_product 
-            ON product.product_id=order_product.product_id
-            WHERE order_product.orders_id=? AND is_replacement=0`
-        console.log("@getOrderProductByOrderId ordersId => " + ordersId)
-        return this.dao.all(sql, [ordersId])
-    }*/
     getOrderProductReplacementByOrdersIdAndProductId(ordersId, productId) {
         let sql = `SELECT order_product.id, product.name, 
             product.price, order_product.product_id, 
@@ -68,9 +66,6 @@ class OrderProductRepository {
         return this.dao.get(sql, [ordersId, productId])
     }
 
-    getAll() {
-        return this.dao.all(`SELECT * FROM order_product`)
-    }
     async create(ordersId, productId, quantity = 1, isReplacement = 0) {
         let newId = uuidv4()
         let sql = `INSERT INTO order_product 
@@ -86,19 +81,6 @@ class OrderProductRepository {
 
     }
 
-    /*
-    insertProducts(products, ordersId) {
-        let insertedItems = [];
-        let sql = `INSERT INTO order_product (id, orders_id, product_id, quantity, replaced_with)
-                VALUES (?, ?, ?, ?, ?)`
-        products.forEach(productId => {
-            if (productId !== products[0]) sql += `, (?, ?, ?, ?, ?)`;
-            let newItem = [uuidv4(), ordersId, productId, 1, null]
-            insertedItems.push(newItem)
-        })
-        return this.dao.run(sql, insertedItems)
-    }*/
-
     updateQuantityByOne(productId, ordersId) {
         return this.dao.run(
             `UPDATE order_product 
@@ -109,20 +91,8 @@ class OrderProductRepository {
     }
 
 
-    getOrderProductByOrderIdAndByProductId(ordersId, productId) {
-        console.log()
-        let sql = `SELECT product.product_id, product.price, order_product.quantity  
-            FROM product 
-            LEFT JOIN order_product 
-            ON product.product_id=order_product.product_id
-            WHERE order_product.orders_id=? AND order_product.id=?`
-
-        return this.dao.get(sql, [ordersId, productId])
-    }
     updateQuantity(ordersId, productId, quantity) {
-        console.log("quantity => " + quantity)
-        console.log("productId => " + productId)
-        console.log("ordersId => " + ordersId)
+
         return this.dao.run(
             `UPDATE order_product
                  SET quantity = ?
@@ -131,9 +101,7 @@ class OrderProductRepository {
         )
     }
     updateReplacedWith(ordersId, productId, replacedWithId) {
-        console.log("replacedWithId => " + replacedWithId)
-        console.log("productId => " + productId)
-        console.log("ordersId => " + ordersId)
+
         return this.dao.run(
             `UPDATE order_product
                  SET replaced_with = ? 
@@ -141,7 +109,7 @@ class OrderProductRepository {
             [replacedWithId, ordersId, productId]
         )
     }
-    //createReplacementProduct(productId)
+
 }
 
 module.exports = OrderProductRepository;

@@ -1,46 +1,26 @@
 const config = require( "./config" );
 const express = require("express")
 const api = express()
-const apiPrefix = "/api"
-const orderPrefix = apiPrefix + "/orders"
-const productPrefix = apiPrefix + "/products"
+const loadDB = require("./LoadDB");
 
-const AppDAO = require('./repository/ApiDAO')
-const ProductService = require("./service/productService");
-const OrderService = require("./service/ordersService");
-const ProductRepository = require("./repository/productRepository");
-const dao = new AppDAO('./database.sqlite3')
-const fs = require('fs');
-const OrderRepository = require("./repository/ordersRepository");
-const OrderProductRepository = require("./repository/orderProductRepository");
+const ApiDAO = require('./repository/ApiDAO')
+const dao = new ApiDAO('./database.sqlite3')
 
+const OrderService = require("./service/OrdersService");
 const orderService = new OrderService(dao);
 
-// -- Load initial DB
-let productRepository = new ProductRepository(dao);
-productRepository.createTable()
-    .then(async () => {
-        fs.readFile('./initialProducts.json', (err, data) => {
-            if (err) throw err;
-            let products = JSON.parse(data);
+const ProductService = require("./service/ProductService");
+const productService = new ProductService(dao);
 
-            products.forEach( async product => {
-
-                if ((await productRepository.getByProductId(product.id)) === undefined) {
-                    productRepository.create(product.id, product.name, product.price)
-                }
-            })
-        });
-    });
-new OrderRepository(dao).createTable();
-new OrderProductRepository(dao).createTable();
-
+let apiPrefix = '/api'
+let productPrefix = apiPrefix + '/products'
+let orderPrefix = apiPrefix + '/orders'
 api.use(express.json({type: '*/*'}));
-// -- /api/products/*
-// ---- GET
+// -- Products API --
+// ---- GET ----
 api.get(productPrefix, async (req, res) => {
-    const result = await new ProductService(dao).getAll()
-    res.send(result);
+    const products = await productService.getAll()
+    res.send(products);
 })
 
 // -- /api/orders/*
@@ -52,9 +32,7 @@ api.get(orderPrefix + "/:order_id/products", async (req, res) => {
     res.send(await orderService.getOrderProductById(req.params.order_id))
 })
 
-api.get("/test/orders/products", async (req, res) => {
-    res.send(await new OrderProductRepository(dao).getAll());
-})
+
 
 // ---- POST
 api.post(orderPrefix, async (req, res) => {
@@ -69,16 +47,21 @@ api.post(orderPrefix + "/:order_id/products", async (req, res) => {
 
 // ---- PATCH
 api.patch(orderPrefix + "/:order_id", async(req, res) => {
-    res.send(await (orderService.updateOrder(req.params.order_id, req.body)));
+    let {statusCode, statusMsg} = await (orderService.updateOrder(req.params.order_id, req.body))
+    res.status(statusCode)
+    res.send(statusMsg)
+
 })
 api.patch(orderPrefix + "/:order_id/products/:product_id", async(req, res) => {
-    res.send(await (orderService.updateOrderProduct(req.params.order_id, req.params.product_id, req.body)));
+    let {statusMsg, statusCode} = await (orderService.updateOrderProduct(req.params.order_id, req.params.product_id, req.body))
+    res.status(statusCode)
+    res.send(statusMsg)
 })
-
-
 
 
 // Start application
 api.listen( config.port, () => {
     console.log( 'E-Commerce Cart API is now listening on', config.port );
+    console.log( 'Booting up the database...')
+    loadDB(dao)
 } );

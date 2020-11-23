@@ -31,14 +31,12 @@ class OrdersService {
         }
         await this.updateTotal(ordersId)
 
-        return "OK"
+        return '"OK"'
     }
     async updateTotal(ordersId) {
         let updatedProductObjects = await this.orderProductRepository.getByOrdersId(ordersId);
         let total = this.calculateTotal(updatedProductObjects);
         let totalString = total.toFixed(2)
-        console.log("ordersId " + ordersId )
-        console.log(" new total is " + totalString)
         return await this.ordersRepository.updateTotal(totalString, ordersId)
     }
     calculateTotal(products){
@@ -83,11 +81,24 @@ class OrdersService {
         return this.orderProductRepository.getByOrdersId(ordersId)
     }
 
-    updateOrder(ordersId, newValues) {
+    async updateOrder(ordersId, newValues) {
         if (newValues.status === "PAID") {
-            return this.ordersRepository.updateStatusToPaid(ordersId, newValues.status)
+            return await this.ordersRepository.getById(ordersId)
+                .then(async res => {
+                    if (res === undefined) return {statusCode: 404, statusMsg: '"Not found"'}
+                    return await this.ordersRepository.updateStatusToPaid(
+                        ordersId,
+                        newValues.status
+                    )
+                        .then(()=>{
+                            return {statusCode: 200, statusMsg: '"OK"'}
+                        })
+
+
+                })
+
         } else {
-            return "Invalid parameters"
+            return {statusCode: 400, statusMsg: '"Invalid parameters"'}
         }
     }
 
@@ -96,7 +107,6 @@ class OrdersService {
             return await this.ordersRepository.getById(ordersId)
                 .then(async order => {
                     if (order.status === "PAID") {
-                        console.log("replaced_with")
                         let replaced_with = newValues.replaced_with;
 
                         let newProduct = await this.orderProductRepository.create(
@@ -106,38 +116,35 @@ class OrdersService {
                         await this.orderProductRepository.updateReplacedWith(ordersId, productId, newProduct.id)
 
                         await this.calculateAndUpdateAmounts(ordersId)
-                        return "OK"
+                        return {statusCode: 200, statusMsg: '"OK"'}
                     } else {
-                        return '"Invalid order status"' // TODO: add error code 400
+                        return {statusCode: 400, statusMsg: '"Invalid order status"'}
                     }
                 })
         } else if (newValues.quantity) {
-            console.log("quantity")
             return await this.ordersRepository.getById(ordersId)
                 .then(async order => {
                     if (order.status === "NEW") {
 
-                        let product = await this.productService.getById(productId)
-
+                        let product = await this.orderProductRepository.getOneByProductId(productId)
+                        if (product === undefined) return {statusCode: 404, statusMsg: '"Not found"', isSuccessful: false}
                         return await this.orderProductRepository
                             .updateQuantity(ordersId, product.product_id, newValues.quantity)
                             .then(async() => {
                                 return await this.updateTotal(ordersId)
                                     .then(() => {
-                                        return '"OK"'
+                                        return {statusCode: 200, statusMsg: '"OK"'}
                                     })
 
                             })
-                            .catch(err => {return err})
                     } else {
-                        return '"Invalid order status"' // TODO: add error code 400
+                        return {statusMsg: '"Invalid order status"', statusCode: 400}
                     }
                 })
         } else {
-            return "Invalid parameters"
+            return {statusMsg: '"Invalid parameters"', statusCode: 400}
         }
 
-        //return this.orderProductRepository.updateQuantity(orderId, productId, newValues)
     }
     async calculateAndUpdateAmounts(ordersId){
         let orderProducts = await this.orderProductRepository.getByOrdersId(ordersId)
